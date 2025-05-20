@@ -6,17 +6,26 @@ class Station(Base):
     __tablename__ = "stations"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    river = Column(String, index=True)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    measurements = relationship("Measurement", back_populates="station")
+    name = Column(String)
+    code = Column(String)
+    river = Column(String)
+    region = Column(String)
+    coordinates = Column(String)
+    graph_url = Column(String)
+    last_updated = Column(DateTime)
 
-class Measurement(Base):
-    __tablename__ = "measurements"
+class WaterLevel(Base):
+    __tablename__ = "water_levels"
 
     id = Column(Integer, primary_key=True, index=True)
     station_id = Column(Integer, ForeignKey("stations.id"))
-    timestamp = Column(DateTime, index=True)
-    water_level = Column(Float)
-    station = relationship("Station", back_populates="measurements") 
+    timestamp = Column(DateTime)
+    value = Column(Float)
+
+class Temperature(Base):
+    __tablename__ = "temperatures"
+
+    id = Column(Integer, primary_key=True, index=True)
+    station_id = Column(Integer, ForeignKey("stations.id"))
+    timestamp = Column(DateTime)
+    value = Column(Float) 

@@ -33,8 +33,8 @@ def read_station(station_id: int, db: Session = Depends(get_db)):
 def create_station(station: schemas.StationCreate, db: Session = Depends(get_db)):
     return crud.create_station(db=db, station=station)
 
-@app.get("/stations/{station_id}/measurements/", response_model=List[schemas.Measurement])
-def read_measurements(
+@app.get("/stations/{station_id}/water-levels/", response_model=List[schemas.WaterLevel])
+def read_water_levels(
     station_id: int,
     start_date: datetime = None,
     end_date: datetime = None,
@@ -42,7 +42,9 @@ def read_measurements(
     limit: int = 1000,
     db: Session = Depends(get_db)
 ):
-    measurements = crud.get_measurements(
+    if crud.get_station(db, station_id=station_id) is None:
+        raise HTTPException(status_code=404, detail="Station not found")
+    return crud.get_water_levels(
         db,
         station_id=station_id,
         start_date=start_date,
@@ -50,14 +52,23 @@ def read_measurements(
         skip=skip,
         limit=limit
     )
-    return measurements
 
-@app.post("/stations/{station_id}/measurements/", response_model=schemas.Measurement)
-def create_measurement(
+@app.get("/stations/{station_id}/temperatures/", response_model=List[schemas.Temperature])
+def read_temperatures(
     station_id: int,
-    measurement: schemas.MeasurementCreate,
+    start_date: datetime = None,
+    end_date: datetime = None,
+    skip: int = 0,
+    limit: int = 1000,
     db: Session = Depends(get_db)
 ):
     if crud.get_station(db, station_id=station_id) is None:
         raise HTTPException(status_code=404, detail="Station not found")
-    return crud.create_measurement(db=db, measurement=measurement) 
+    return crud.get_temperatures(
+        db,
+        station_id=station_id,
+        start_date=start_date,
+        end_date=end_date,
+        skip=skip,
+        limit=limit
+    ) 
