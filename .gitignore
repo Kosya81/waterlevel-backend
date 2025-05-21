@@ -42,3 +42,4 @@ ENV/
 *.log
 scheduler.log
 data_loading.log 
+/LightsailDefaultKey-eu-central-1.pem

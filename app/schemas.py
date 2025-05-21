@@ -7,7 +7,7 @@ class StationBase(BaseModel):
     code: str
     river: str
     region: str
-    coordinates: str
+    coordinates: Optional[str] = None
     graph_url: str
 
 class StationCreate(StationBase):

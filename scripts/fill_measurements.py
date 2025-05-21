@@ -73,21 +73,35 @@ async def process_station(session, station_code, station_name, db):
             
             # Save water level if available
             if data['water_level'] is not None:
-                water_level = models.WaterLevel(
-                    station_id=station.id,
-                    timestamp=timestamp,
-                    value=data['water_level']
-                )
-                db.add(water_level)
+                # Check if measurement already exists
+                existing_water_level = db.query(models.WaterLevel).filter(
+                    models.WaterLevel.station_id == station.id,
+                    models.WaterLevel.timestamp == timestamp
+                ).first()
+                
+                if not existing_water_level:
+                    water_level = models.WaterLevel(
+                        station_id=station.id,
+                        timestamp=timestamp,
+                        value=data['water_level']
+                    )
+                    db.add(water_level)
             
             # Save temperature if available
             if data['temperature'] is not None:
-                temperature = models.Temperature(
-                    station_id=station.id,
-                    timestamp=timestamp,
-                    value=data['temperature']
-                )
-                db.add(temperature)
+                # Check if measurement already exists
+                existing_temperature = db.query(models.Temperature).filter(
+                    models.Temperature.station_id == station.id,
+                    models.Temperature.timestamp == timestamp
+                ).first()
+                
+                if not existing_temperature:
+                    temperature = models.Temperature(
+                        station_id=station.id,
+                        timestamp=timestamp,
+                        value=data['temperature']
+                    )
+                    db.add(temperature)
         
         # Update station's last_updated timestamp
         station.last_updated = datetime.now()
