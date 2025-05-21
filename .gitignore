@@ -22,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+.venv/
 ENV/
 
 # IDE
@@ -38,4 +39,6 @@ ENV/
 *.sqlite3
 
 # Logs
-*.log 
+*.log
+scheduler.log
+data_loading.log 
