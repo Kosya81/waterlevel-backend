@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 class StationBase(BaseModel):
@@ -9,6 +9,7 @@ class StationBase(BaseModel):
     region: str
     coordinates: Optional[str] = None
     graph_url: str
+    time_offset: Optional[int] = 0  # Смещение времени в секундах
 
 class StationCreate(StationBase):
     pass
@@ -29,8 +30,6 @@ class WaterLevelCreate(WaterLevelBase):
     pass
 
 class WaterLevel(WaterLevelBase):
-    id: int
-
     class Config:
         from_attributes = True
 
@@ -43,7 +42,5 @@ class TemperatureCreate(TemperatureBase):
     pass
 
 class Temperature(TemperatureBase):
-    id: int
-
     class Config:
         from_attributes = True 

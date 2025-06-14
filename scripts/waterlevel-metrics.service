@@ -1,0 +1,21 @@
+[Unit]
+Description=WaterLevel Database Metrics Collector
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/var/www/waterlevel
+Environment=PYTHONPATH=/var/www/waterlevel
+Environment=POSTGRES_DB=waterlevel
+Environment=POSTGRES_USER=waterlevel
+Environment=POSTGRES_PASSWORD=sa
+Environment=POSTGRES_HOST=localhost
+Environment=POSTGRES_PORT=5432
+Environment=AWS_DEFAULT_REGION=eu-central-1
+ExecStart=/var/www/waterlevel/venv/bin/python /var/www/waterlevel/scripts/collect_db_metrics.py
+Restart=always
+RestartSec=300
+
+[Install]
+WantedBy=multi-user.target 

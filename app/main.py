@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 from . import crud, models, schemas
 from .database import SessionLocal, engine
@@ -8,6 +9,15 @@ from .database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -44,7 +54,7 @@ def read_water_levels(
 ):
     if crud.get_station(db, station_id=station_id) is None:
         raise HTTPException(status_code=404, detail="Station not found")
-    return crud.get_water_levels(
+    water_levels = crud.get_water_levels(
         db,
         station_id=station_id,
         start_date=start_date,
@@ -52,6 +62,14 @@ def read_water_levels(
         skip=skip,
         limit=limit
     )
+    return [
+        schemas.WaterLevel(
+            station_id=level.station_id,
+            timestamp=level.timestamp_utc,
+            value=level.value
+        )
+        for level in water_levels
+    ]
 
 @app.get("/stations/{station_id}/temperatures/", response_model=List[schemas.Temperature])
 def read_temperatures(
@@ -64,11 +82,19 @@ def read_temperatures(
 ):
     if crud.get_station(db, station_id=station_id) is None:
         raise HTTPException(status_code=404, detail="Station not found")
-    return crud.get_temperatures(
+    temperatures = crud.get_temperatures(
         db,
         station_id=station_id,
         start_date=start_date,
         end_date=end_date,
         skip=skip,
         limit=limit
-    ) 
+    )
+    return [
+        schemas.Temperature(
+            station_id=temp.station_id,
+            timestamp=temp.timestamp_utc,
+            value=temp.value
+        )
+        for temp in temperatures
+    ] 

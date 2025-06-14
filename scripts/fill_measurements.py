@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import sys
 import os
 import logging
@@ -13,22 +13,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.database import SessionLocal
 from app import models
 from scrape_stations import get_station_data, preprocess_js_object
+from app.logging_config import setup_logging
 
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        RotatingFileHandler(
-            'data_loading.log',
-            maxBytes=10*1024*1024,  # 10MB
-            backupCount=5,
-            encoding='utf-8'
-        ),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging("scheduler")
 
 async def process_station(session, station_code, station_name, db):
     """Process single station and save its measurements to database"""
@@ -68,8 +56,14 @@ async def process_station(session, station_code, station_name, db):
                     measurements_by_time[timestamp_str]['temperature'] = temp
         
         # Save measurements to database
+        water_level_count = 0
+        temperature_count = 0
+        
         for timestamp_str, data in measurements_by_time.items():
             timestamp = datetime.fromisoformat(timestamp_str)
+            # Применяем смещение времени станции (по умолчанию 0)
+            time_offset = station.time_offset or 0
+            timestamp_utc = timestamp + timedelta(seconds=time_offset)
             
             # Save water level if available
             if data['water_level'] is not None:
@@ -83,9 +77,11 @@ async def process_station(session, station_code, station_name, db):
                     water_level = models.WaterLevel(
                         station_id=station.id,
                         timestamp=timestamp,
+                        timestamp_utc=timestamp_utc,
                         value=data['water_level']
                     )
                     db.add(water_level)
+                    water_level_count += 1
             
             # Save temperature if available
             if data['temperature'] is not None:
@@ -99,16 +95,18 @@ async def process_station(session, station_code, station_name, db):
                     temperature = models.Temperature(
                         station_id=station.id,
                         timestamp=timestamp,
+                        timestamp_utc=timestamp_utc,
                         value=data['temperature']
                     )
                     db.add(temperature)
+                    temperature_count += 1
         
         # Update station's last_updated timestamp
         station.last_updated = datetime.now()
         
         # Commit changes
         db.commit()
-        logger.info(f"Measurements saved for station {station_name}")
+        logger.info(f"Station {station_name}: Added {water_level_count} water levels and {temperature_count} temperatures")
             
     except Exception as e:
         db.rollback()

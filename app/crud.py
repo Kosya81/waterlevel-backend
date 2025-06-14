@@ -32,11 +32,19 @@ def get_water_levels(
     limit: int = 1000
 ):
     query = db.query(models.WaterLevel).filter(models.WaterLevel.station_id == station_id)
+    
     if start_date:
-        query = query.filter(models.WaterLevel.timestamp >= start_date)
+        query = query.filter(models.WaterLevel.timestamp_utc >= start_date)
     if end_date:
-        query = query.filter(models.WaterLevel.timestamp <= end_date)
-    return query.offset(skip).limit(limit).all()
+        query = query.filter(models.WaterLevel.timestamp_utc <= end_date)
+    
+    water_levels = query.order_by(models.WaterLevel.timestamp_utc.asc()).offset(skip).limit(limit).all()
+    
+    # Загружаем информацию о станции
+    for level in water_levels:
+        level.station = get_station(db, station_id)
+    
+    return water_levels
 
 def get_temperatures(
     db: Session,
@@ -47,8 +55,16 @@ def get_temperatures(
     limit: int = 1000
 ):
     query = db.query(models.Temperature).filter(models.Temperature.station_id == station_id)
+    
     if start_date:
-        query = query.filter(models.Temperature.timestamp >= start_date)
+        query = query.filter(models.Temperature.timestamp_utc >= start_date)
     if end_date:
-        query = query.filter(models.Temperature.timestamp <= end_date)
-    return query.offset(skip).limit(limit).all() 
+        query = query.filter(models.Temperature.timestamp_utc <= end_date)
+    
+    temperatures = query.order_by(models.Temperature.timestamp_utc.asc()).offset(skip).limit(limit).all()
+    
+    # Загружаем информацию о станции
+    for temp in temperatures:
+        temp.station = get_station(db, station_id)
+    
+    return temperatures 
